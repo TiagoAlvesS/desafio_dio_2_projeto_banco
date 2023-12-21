@@ -1,0 +1,170 @@
+
+import textwrap
+
+
+def menu():
+    menu = """\n
+    ================ MENU ================
+    [d]\tDepositar
+    [s]\tSacar
+    [e]\tExtrato
+    [nc]\tNova conta
+    [lc]\tListar contas
+    [nu]\tNovo usuário
+    [q]\tSair
+    => """
+    return input(textwrap.dedent(menu))
+
+def depositar(saldo, valor, extrato):
+
+    if valor > 0:
+        saldo += valor
+        extrato += f'Depósito: R$ {valor:.2f}\n'
+    else:
+        print('Erro. Valor menor que zero.')
+    return saldo, extrato
+
+def sacar(*, saldo, valor, extrato, limite, numero_saques, limite_saques):
+    
+    valida_limite = valor > limite
+    valida_saldo = valor > saldo
+    valida_qtd_saques = numero_saques >= limite_saques
+    
+    if valida_qtd_saques:
+        print('Erro. Limite de saques diário excedido.')
+        
+    elif valida_saldo:
+        print('Erro. Saldo insuficiente.')
+        
+    elif valida_limite:
+        print('Erro. O valor que está tentando sacar é maior que o limite permitido.')
+        
+    elif valor > 0:
+        saldo -= valor
+        extrato += f'Saque: R$ {valor:.2f}\n' 
+        numero_saques += 1
+        print('Numero saques', numero_saques )
+        print('Saque realizado')
+    
+    else:
+        print('Erro. Valor informado inválido.')
+    
+    return saldo, extrato, numero_saques
+  
+def exibir_extrato(saldo, /, *, extrato):
+    if extrato:
+        print(f'======= EXTRATO =======\n{extrato}\n\n')
+        print(f'Saldo da conta: {saldo:.2f}')
+    else:
+        print('Não foram realizadas movimentações')  
+           
+def cadastrar_usuarios(usuarios):
+    cpf = input('CPF (somente digitos): ')
+    usuario_filtrado = filtrar_usuario(cpf, usuarios)
+    if usuario_filtrado:
+        print(f'CPF já cadastrado: {cpf}')
+        return 
+    
+    nome = input('Nome: ')
+    data_nascimento = input('Data nascimento (dd/mm/yyyy): ')
+    endereco = input('Endereço (logradouro, nro - bairro - cidade/sigla estado): ')
+    
+    usuarios.append({"cpf":cpf, "nome":nome, "data_nascimento":data_nascimento, "endereco":endereco})
+    print('Usuário criado com sucesso.')
+
+
+def cadastrar_conta(AGENCIA, usuarios, contas, conta):
+    cpf = input('CPF (somente digitos): ')
+    usuario_filtrado = filtrar_usuario(cpf, usuarios)
+    
+    if usuario_filtrado:
+        
+        contas.append({"agencia": AGENCIA, "conta": len(contas)+1, "cpf":cpf})
+        print(f'Conta criada com sucesso.')
+        
+        return conta
+    else:
+        print('Erro. CPF não encontrado no sistema. Cadastre o usuário antes de criar a conta.')
+        return 
+    
+    
+def listar_contas(contas, cpf):
+    
+    if cpf:
+        print(f'Contas para o CPF = {cpf}\n')
+        [print(f'{conta} \n') for conta in contas if conta["cpf"] == cpf]
+    else: 
+        print('Listar contas: \n')
+        [print(f'{conta}\n') for conta in contas]
+    
+    
+       
+
+def filtrar_usuario(cpf, usuarios):
+    usuario_filtrado = [usuario for usuario in usuarios if usuario['cpf'] == cpf]
+    return  usuario_filtrado[0] if usuario_filtrado else None
+      
+
+
+def main():
+    LIMITE_SAQUES = 3
+    AGENCIA = '0001'
+    
+    saldo = 0
+    limite = 500
+    extrato = ''
+    numero_saques = 0
+    usuarios = []
+    contas = []
+    conta = []
+    
+    while True:
+        opcao = menu()
+        
+        if opcao == 'd':
+            valor = float(input('Informe o valor do deposito: '))
+            
+            saldo, extrato = depositar(saldo, valor, extrato)
+            
+        elif opcao == 's':
+            valor = float(input('Informe o valor do saque: '))
+            saldo, extrato, numero_saques = sacar(
+                saldo=saldo,
+                valor=valor,
+                extrato=extrato,
+                limite=limite,
+                numero_saques=numero_saques,
+                limite_saques=LIMITE_SAQUES
+            )
+            
+        elif opcao == 'e':
+            exibir_extrato(saldo, extrato=extrato)
+        
+        elif opcao == 'nu':
+            
+            cadastrar_usuarios(usuarios)
+            
+        elif opcao == 'nc':
+            
+            cadastrar_conta(AGENCIA , usuarios, contas, conta=conta)
+               
+        elif opcao == 'lc':
+            if contas:
+                filtrar_cpf = input('Deseja filtrar por CPF (S/N)? ')
+                
+                if filtrar_cpf == 'S':
+                    cpf = input('Digite o CPF: ')
+                    if filtrar_usuario(cpf, usuarios):
+                        listar_contas(contas, cpf)
+                
+                else:
+                    listar_contas(contas, cpf=None)
+        
+        elif opcao == 'q':
+            break
+        
+        else:
+            print('Opção inválida')
+                    
+            
+main()
